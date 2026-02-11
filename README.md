@@ -4,8 +4,6 @@ Team connect.harshwardhan
 3)Harsh Singh
 4)Parantap Thakur
 
-email:nitiniszod10@gmail.com
-
 We are working on problem statement no 3.
 
 problem statement overview:
