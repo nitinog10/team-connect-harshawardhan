@@ -1,3 +1,4 @@
+```typescript
 import {
   users,
   items,
@@ -17,6 +18,7 @@ import {
 import { customAlphabet } from "nanoid";
 import { db } from "./db";
 import { eq, and, or } from "drizzle-orm";
+import { calculatePointsValue } from "./utils";
 
 const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 21);
 
@@ -58,20 +60,20 @@ export class DatabaseStorage implements IStorage {
 
   async upsertUser(userData: UpsertUser): Promise<User> {
     const [user] = await db
-      .insert(users)
-      .values({
-        ...userData,
-        points: userData.points ?? 5, // New users get 5 points
+     .insert(users)
+     .values({
+       ...userData,
+        points: userData.points?? 5, // New users get 5 points
         updatedAt: new Date(),
       })
-      .onConflictDoUpdate({
+     .onConflictDoUpdate({
         target: users.id,
         set: {
           ...userData,
           updatedAt: new Date(),
         },
       })
-      .returning();
+     .returning();
     return user;
   }
 
@@ -79,12 +81,12 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db.select().from(users).where(eq(users.id, userId));
     if (user) {
       await db
-        .update(users)
+       .update(users)
         .set({
           points: (user.points || 0) + points,
           updatedAt: new Date(),
         })
-        .where(eq(users.id, userId));
+       .where(eq(users.id, userId));
     }
   }
 
@@ -92,15 +94,15 @@ export class DatabaseStorage implements IStorage {
   async createItem(itemData: InsertItem): Promise<Item> {
     const id = nanoid();
     const [item] = await db
-      .insert(items)
-      .values({
-        ...itemData,
+     .insert(items)
+     .values({
+       ...itemData,
         id,
-        pointsValue: this.calculatePointsValue(itemData),
-        status: itemData.status ?? 'approved',
+        pointsValue: calculatePointsValue(itemData),
+        status: itemData.status?? 'approved',
         updatedAt: new Date(),
       })
-      .returning();
+     .returning();
     
     // Award points for listing
     if (item.userId) {
@@ -121,10 +123,10 @@ export class DatabaseStorage implements IStorage {
 
   async getFeaturedItems(): Promise<Item[]> {
     return await db
-      .select()
-      .from(items)
-      .where(and(eq(items.isFeatured, true), eq(items.status, 'approved')))
-      .limit(8);
+     .select()
+     .from(items)
+     .where(and(eq(items.isFeatured, true), eq(items.status, 'approved')))
+     .limit(8);
   }
 
   async getAllItems(filters?: { category?: string; type?: string; status?: string }): Promise<Item[]> {
@@ -152,13 +154,13 @@ export class DatabaseStorage implements IStorage {
 
   async updateItem(id: string, updates: Partial<Item>): Promise<Item> {
     const [item] = await db
-      .update(items)
-      .set({
-        ...updates,
+     .update(items)
+     .set({
+       ...updates,
         updatedAt: new Date(),
       })
-      .where(eq(items.id, id))
-      .returning();
+     .where(eq(items.id, id))
+     .returning();
     
     if (!item) {
       throw new Error('Item not found');
@@ -175,23 +177,23 @@ export class DatabaseStorage implements IStorage {
   async createSwap(swapData: InsertSwap): Promise<Swap> {
     const id = nanoid();
     const [swap] = await db
-      .insert(swaps)
-      .values({
-        ...swapData,
+     .insert(swaps)
+     .values({
+       ...swapData,
         id,
-        status: swapData.status ?? 'pending',
+        status: swapData.status?? 'pending',
         updatedAt: new Date(),
       })
-      .returning();
+     .returning();
     
     return swap;
   }
 
   async getUserSwaps(userId: string): Promise<Swap[]> {
     return await db
-      .select()
-      .from(swaps)
-      .where(or(eq(swaps.requesterId, userId), eq(swaps.ownerId, userId)))
+     .select()
+     .from(swaps)
+     .where(or(eq(swaps.requesterId, userId), eq(swaps.ownerId, userId)))
       .orderBy(swaps.createdAt);
   }
 
@@ -199,20 +201,20 @@ export class DatabaseStorage implements IStorage {
     const [existingSwap] = await db.select().from(swaps).where(eq(swaps.id, id));
     
     const [swap] = await db
-      .update(swaps)
-      .set({
-        ...updates,
+     .update(swaps)
+     .set({
+       ...updates,
         updatedAt: new Date(),
       })
-      .where(eq(swaps.id, id))
-      .returning();
+     .where(eq(swaps.id, id))
+     .returning();
     
     if (!swap) {
       throw new Error('Swap not found');
     }
     
     // Award points for completed swaps
-    if (swap.status === 'completed' && existingSwap?.status !== 'completed') {
+    if (swap.status === 'completed' && existingSwap?.status!== 'completed') {
       if (swap.requesterId) {
         await this.updateUserPoints(swap.requesterId, 20);
       }
@@ -228,12 +230,12 @@ export class DatabaseStorage implements IStorage {
   async createDonation(donationData: InsertDonation): Promise<Donation> {
     const id = nanoid();
     const [donation] = await db
-      .insert(donations)
-      .values({
-        ...donationData,
+     .insert(donations)
+     .values({
+       ...donationData,
         id,
       })
-      .returning();
+     .returning();
     
     // Award points for donation
     if (donation.donorId) {
@@ -245,54 +247,35 @@ export class DatabaseStorage implements IStorage {
 
   async getUserDonations(userId: string): Promise<Donation[]> {
     return await db
-      .select()
-      .from(donations)
-      .where(eq(donations.donorId, userId))
-      .orderBy(donations.createdAt);
+     .select()
+     .from(donations)
+     .where(eq(donations.donorId, userId))
+     .orderBy(donations.createdAt);
   }
 
   // AI Suggestions
   async createAISuggestion(suggestionData: Omit<AISuggestion, 'id' | 'createdAt'>): Promise<AISuggestion> {
     const id = nanoid();
     const [suggestion] = await db
-      .insert(aiSuggestions)
-      .values({
-        ...suggestionData,
+     .insert(aiSuggestions)
+     .values({
+       ...suggestionData,
         id,
       })
-      .returning();
+     .returning();
     
     return suggestion;
   }
 
   async getAISuggestions(userId: string): Promise<AISuggestion[]> {
     return await db
-      .select()
-      .from(aiSuggestions)
-      .where(eq(aiSuggestions.userId, userId))
-      .orderBy(aiSuggestions.createdAt)
-      .limit(10);
-  }
-
-  private calculatePointsValue(item: InsertItem): number {
-    let baseValue = 100;
-    
-    // Adjust by condition
-    switch (item.condition) {
-      case 'New': baseValue += 50; break;
-      case 'Like New': baseValue += 30; break;
-      case 'Good': baseValue += 10; break;
-      case 'Fair': baseValue -= 10; break;
-    }
-    
-    // Adjust by type
-    const premiumTypes = ['Dress', 'Jacket', 'Coat', 'Shoes', 'Boots'];
-    if (premiumTypes.includes(item.type)) {
-      baseValue += 20;
-    }
-    
-    return Math.max(baseValue, 50);
+     .select()
+     .from(aiSuggestions)
+     .where(eq(aiSuggestions.userId, userId))
+     .orderBy(aiSuggestions.createdAt)
+     .limit(10);
   }
 }
 
 export const storage = new DatabaseStorage();
+```
