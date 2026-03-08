@@ -17,3 +17,14 @@ submission video link:
 link1 Main video: https://drive.google.com/file/d/1vSxEGFA_BZVTioWcsMPHwSAMTZI2ULgV/view?usp=sharing
 
 link2 explaining a bonus part: https://drive.google.com/file/d/16cjEf7DbAOzSdgVFqIHY7bGuUsibyCXD/view?usp=drive_link
+
+## Code Improvements Applied
+
+- Add regression tests around the highest-risk files: `ML suggestions/server/storage.ts`, `ML suggestions/server/db.ts`, `vite.config.ts`.
+- Consider extracting shared utility code into a dedicated module to lower coupling.
+- Re-index and regenerate walkthroughs/diagrams after structural changes to keep documentation current.
+
+Files changed:
+- `ML suggestions/server/storage.ts`
+- `ML suggestions/server/db.ts`
+- `vite.config.ts`
